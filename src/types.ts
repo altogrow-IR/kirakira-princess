@@ -43,19 +43,30 @@ export type Sticker = {
   type: StickerType;
   label: string;
   reason: string;
+  promiseId: string;
+  promiseTitle: string;
   createdAt: string;
 };
 
-export type AppState = {
+export type ChildProfile = {
+  id: string;
+  name: string;
   promises: PromiseItem[];
   records: DailyRecord[];
   treasures: Treasure[];
   stickers: Sticker[];
-  stickerDesigns: StickerDesign[];
   princessImages: Record<number, string | undefined>;
   totalHanamaru: number;
-  childName: string;
   lastKnownLevel: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AppState = {
+  children: ChildProfile[];
+  activeChildId: string;
+  stickerDesigns: StickerDesign[];
+  appVersion: 2;
 };
 
 export type AppView = "today" | "princess" | "treasures" | "stickers" | "calendar" | "parents";

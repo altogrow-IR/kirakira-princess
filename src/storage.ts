@@ -1,4 +1,4 @@
-import type { AppState, DailyRecord, PromiseItem, StickerDesign, Treasure } from "./types";
+import type { AppState, ChildProfile, DailyRecord, PromiseItem, Sticker, StickerDesign, Treasure } from "./types";
 import { getCurrentPrincessGrowth } from "./utils/princessGrowth";
 
 export const STORAGE_KEY = "kirakira-princess-app-v1";
@@ -31,17 +31,30 @@ export const defaultStickerDesigns: StickerDesign[] = [
   { type: "ribbon", emoji: "🎀", label: "やさしさリボン" },
 ];
 
-export function createInitialState(): AppState {
+export function createDefaultChild(name = "プリンセス"): ChildProfile {
+  const now = nowIso();
   return {
-    promises: defaultPromises,
+    id: `child-${crypto.randomUUID()}`,
+    name: name.trim() || "プリンセス",
+    promises: defaultPromises.map((item) => ({ ...item, createdAt: now })),
     records: [],
     treasures: refreshTreasures(defaultTreasures, 0),
     stickers: [],
-    stickerDesigns: defaultStickerDesigns,
     princessImages: {},
     totalHanamaru: 0,
-    childName: "プリンセス",
     lastKnownLevel: 1,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+export function createInitialState(): AppState {
+  const child = createDefaultChild();
+  return {
+    children: [child],
+    activeChildId: child.id,
+    stickerDesigns: defaultStickerDesigns,
+    appVersion: 2,
   };
 }
 
@@ -66,34 +79,95 @@ export function loadState(): AppState {
 
 export function saveState(state: AppState): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stripImageDataUrls(normalizeState(state))));
   } catch (error) {
-    console.warn("保存できませんでした。画像が大きい可能性があります。", error);
+    console.warn("保存できませんでした。", error);
   }
 }
 
 export function migrateState(value: unknown): AppState {
   if (!value || typeof value !== "object") return createInitialState();
   const source = value as Record<string, unknown>;
-  const initial = createInitialState();
 
-  const totalHanamaru = toNumber(source.totalHanamaru ?? source.totalStars, 0);
-  const promises = migratePromises(source.promises) ?? initial.promises;
-  const records = migrateRecords(source.records);
-  const stickerDesigns = mergeStickerDesigns(source.stickerDesigns);
-  const treasures = migrateTreasures(source.treasures, totalHanamaru);
-  const lastKnownLevel = toNumber(source.lastKnownLevel, getCurrentPrincessGrowth(totalHanamaru).level);
+  if (source.appVersion === 2 && Array.isArray(source.children)) {
+    return normalizeState({
+      children: source.children.map((child) => migrateChild(child)),
+      activeChildId: typeof source.activeChildId === "string" ? source.activeChildId : "",
+      stickerDesigns: mergeStickerDesigns(source.stickerDesigns),
+      appVersion: 2,
+    });
+  }
+
+  return migrateOldState(source);
+}
+
+export function normalizeState(state: AppState): AppState {
+  const children = state.children.map((child) => {
+    const safeTotal = Math.max(0, child.totalHanamaru);
+    return {
+      ...child,
+      name: child.name.trim() || "プリンセス",
+      totalHanamaru: safeTotal,
+      treasures: refreshTreasures(child.treasures, safeTotal),
+      stickers: child.stickers.map(migrateSticker).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)),
+      updatedAt: child.updatedAt || nowIso(),
+    };
+  }).filter((child) => child.id && child.name);
+
+  const fallback = children.length > 0 ? children : [createDefaultChild()];
+  const activeChildId = fallback.some((child) => child.id === state.activeChildId) ? state.activeChildId : fallback[0].id;
 
   return {
+    children: fallback,
+    activeChildId,
+    stickerDesigns: mergeStickerDesigns(state.stickerDesigns),
+    appVersion: 2,
+  };
+}
+
+function migrateOldState(source: Record<string, unknown>): AppState {
+  const totalHanamaru = Math.max(0, toNumber(source.totalHanamaru ?? source.totalStars, 0));
+  const child = migrateChild({
+    id: `child-${crypto.randomUUID()}`,
+    name: typeof source.childName === "string" && source.childName.trim() ? source.childName : "プリンセス",
+    promises: source.promises,
+    records: source.records,
+    treasures: source.treasures,
+    stickers: source.stickers,
+    princessImages: source.princessImages,
+    totalHanamaru,
+    lastKnownLevel: source.lastKnownLevel,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  });
+
+  return normalizeState({
+    children: [child],
+    activeChildId: child.id,
+    stickerDesigns: mergeStickerDesigns(source.stickerDesigns),
+    appVersion: 2,
+  });
+}
+
+function migrateChild(value: unknown): ChildProfile {
+  const initial = createDefaultChild();
+  if (!value || typeof value !== "object") return initial;
+  const source = value as Record<string, unknown>;
+  const totalHanamaru = Math.max(0, toNumber(source.totalHanamaru ?? source.totalStars, 0));
+  const promises = migratePromises(source.promises) ?? initial.promises;
+
+  return {
+    id: typeof source.id === "string" && source.id ? source.id : initial.id,
+    name: typeof source.name === "string" && source.name.trim() ? source.name.trim() : initial.name,
     promises,
-    records,
-    treasures,
-    stickers: Array.isArray(source.stickers) ? source.stickers.filter(Boolean) as AppState["stickers"] : [],
-    stickerDesigns,
+    records: migrateRecords(source.records),
+    treasures: migrateTreasures(source.treasures, totalHanamaru),
+    stickers: migrateStickers(source.stickers),
     princessImages: isRecord(source.princessImages) ? source.princessImages as Record<number, string | undefined> : {},
     totalHanamaru,
-    childName: typeof source.childName === "string" && source.childName.trim() ? source.childName : initial.childName,
-    lastKnownLevel,
+    lastKnownLevel: toNumber(source.lastKnownLevel, getCurrentPrincessGrowth(totalHanamaru).level),
+    createdAt: typeof source.createdAt === "string" ? source.createdAt : nowIso(),
+    updatedAt: typeof source.updatedAt === "string" ? source.updatedAt : nowIso(),
   };
 }
 
@@ -144,6 +218,26 @@ function migrateTreasures(value: unknown, totalHanamaru: number): Treasure[] {
   }), totalHanamaru);
 }
 
+function migrateStickers(value: unknown): Sticker[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord).map(migrateSticker);
+}
+
+function migrateSticker(value: Record<string, unknown>): Sticker {
+  const type = isStickerType(value.type) ? value.type : "hanamaru";
+  const label = typeof value.label === "string" && value.label ? value.label : defaultStickerDesigns.find((item) => item.type === type)?.label ?? "シール";
+  return {
+    id: typeof value.id === "string" && value.id ? value.id : `sticker-${crypto.randomUUID()}`,
+    date: typeof value.date === "string" && value.date ? value.date : nowIso().slice(0, 10),
+    type,
+    label,
+    reason: typeof value.reason === "string" && value.reason ? value.reason : label,
+    promiseId: typeof value.promiseId === "string" && value.promiseId ? value.promiseId : "legacy",
+    promiseTitle: typeof value.promiseTitle === "string" && value.promiseTitle ? value.promiseTitle : "これまでのシール",
+    createdAt: typeof value.createdAt === "string" && value.createdAt ? value.createdAt : nowIso(),
+  };
+}
+
 function mergeStickerDesigns(value: unknown): StickerDesign[] {
   if (!Array.isArray(value)) return defaultStickerDesigns;
   return defaultStickerDesigns.map((design) => {
@@ -151,9 +245,29 @@ function mergeStickerDesigns(value: unknown): StickerDesign[] {
     if (!isRecord(saved)) return design;
     return {
       ...design,
-      imageDataUrl: typeof saved.imageDataUrl === "string" ? saved.imageDataUrl : undefined,
+      imageDataUrl: typeof saved.imageDataUrl === "string" && saved.imageDataUrl ? saved.imageDataUrl : undefined,
     };
   });
+}
+
+function stripImageDataUrls(state: AppState): AppState {
+  return {
+    ...state,
+    children: state.children.map((child) => ({
+      ...child,
+      princessImages: Object.fromEntries(
+        Object.entries(child.princessImages).map(([level]) => [level, undefined]),
+      ) as Record<number, string | undefined>,
+    })),
+    stickerDesigns: state.stickerDesigns.map((design) => ({
+      ...design,
+      imageDataUrl: undefined,
+    })),
+  };
+}
+
+function isStickerType(value: unknown): value is Sticker["type"] {
+  return value === "hanamaru" || value === "rainbow" || value === "crown" || value === "diamond" || value === "ribbon";
 }
 
 function toNumber(value: unknown, fallback: number): number {

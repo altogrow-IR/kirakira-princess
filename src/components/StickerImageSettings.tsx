@@ -32,7 +32,7 @@ export function StickerImageSettings({ designs, onChange, onMessage }: StickerIm
   return (
     <section className="settings-block">
       <h3>シール画像設定</h3>
-      <p className="hint-text">あとから変えると、前のシールにも反映されます。</p>
+      <p className="hint-text">シール画像は子ども全員で共通です。あとから変えると、前のシールにも反映されます。</p>
       <div className="settings-list">
         {designs.map((design) => (
           <article className="image-setting-row" key={design.type}>

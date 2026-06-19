@@ -1,14 +1,14 @@
-import type { AppState } from "../types";
+import type { ChildProfile } from "../types";
 import { princessGrowths } from "../utils/princessGrowth";
 import { fileToDataUrl, validateImageFile } from "../utils/image";
 
 type PrincessImageSettingsProps = {
-  state: AppState;
-  onChange: (images: AppState["princessImages"]) => void;
+  child: ChildProfile;
+  onChange: (images: ChildProfile["princessImages"]) => void;
   onMessage: (message: string) => void;
 };
 
-export function PrincessImageSettings({ state, onChange, onMessage }: PrincessImageSettingsProps) {
+export function PrincessImageSettings({ child, onChange, onMessage }: PrincessImageSettingsProps) {
   async function handleFile(level: number, file: File | undefined) {
     if (!file) return;
     const validation = validateImageFile(file);
@@ -18,7 +18,7 @@ export function PrincessImageSettings({ state, onChange, onMessage }: PrincessIm
     }
     try {
       const imageDataUrl = await fileToDataUrl(file);
-      onChange({ ...state.princessImages, [level]: imageDataUrl });
+      onChange({ ...child.princessImages, [level]: imageDataUrl });
       onMessage("プリンセス画像をかえました。");
     } catch {
       onMessage("画像を読みこめませんでした。");
@@ -27,7 +27,7 @@ export function PrincessImageSettings({ state, onChange, onMessage }: PrincessIm
 
   function removeImage(level: number) {
     if (!confirm("このプリンセス画像を 初期にもどしますか？")) return;
-    const next = { ...state.princessImages };
+    const next = { ...child.princessImages };
     delete next[level];
     onChange(next);
   }
@@ -38,7 +38,7 @@ export function PrincessImageSettings({ state, onChange, onMessage }: PrincessIm
       <p className="hint-text">PNG / JPG / WebP の画像を登録できます。</p>
       <div className="settings-list">
         {princessGrowths.map((growth) => {
-          const image = state.princessImages[growth.level];
+          const image = child.princessImages[growth.level];
           return (
             <article className="image-setting-row" key={growth.level}>
               <div className="settings-preview">

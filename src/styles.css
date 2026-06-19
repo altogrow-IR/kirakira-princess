@@ -41,6 +41,54 @@ button {
   text-align: center;
 }
 
+.child-switcher {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.child-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scrollbar-width: thin;
+}
+
+.child-tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  align-items: center;
+  min-height: 48px;
+  border: 2px solid rgba(255, 184, 218, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #7a3568;
+  padding: 10px 16px;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.child-tab.active {
+  border-color: #ffd45f;
+  background: #fff6cf;
+  color: #c83e8d;
+  box-shadow: 0 8px 18px rgba(198, 81, 145, 0.16);
+}
+
+.add-child-tab {
+  min-width: 52px;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.child-add-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
 h1,
 h2,
 h3,
@@ -241,6 +289,46 @@ main {
   color: #8f6a82;
 }
 
+.promise-main {
+  display: grid;
+  gap: 6px;
+}
+
+.promise-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.promise-sticker-status {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  background: #fff9dc;
+  color: #8f3c86;
+  padding: 6px 10px;
+  font-weight: 800;
+}
+
+.mini-sticker {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border: 2px solid #ffd45f;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 1.2rem;
+}
+
+.mini-sticker img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .primary-button,
 .secondary-button,
 .danger-button {
@@ -266,6 +354,11 @@ main {
   color: #8c3354;
   background: #ffe3ed;
   border: 2px solid #ffa9c5;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .wide {
@@ -474,6 +567,56 @@ input {
   animation: pop 0.32s ease both;
 }
 
+.sticker-picker-card {
+  display: grid;
+  gap: 14px;
+}
+
+.sticker-picker-promise {
+  color: #8f3c86;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.sticker-picker-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.sticker-choice {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 12px;
+  align-items: center;
+  min-height: 72px;
+  border: 2px solid #ffd45f;
+  border-radius: 20px;
+  background: #fff9dc;
+  color: #7a3568;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.sticker-choice-mark {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  overflow: hidden;
+  border: 2px solid #ffb8da;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 2rem;
+}
+
+.sticker-choice-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .big-sparkle {
   font-size: 4rem;
   animation: twinkle 1.2s ease-in-out infinite alternate;
@@ -512,6 +655,7 @@ input {
   .promise-card,
   .calendar-day,
   .form-row,
+  .child-add-row,
   .promise-setting-row {
     grid-template-columns: 1fr;
   }

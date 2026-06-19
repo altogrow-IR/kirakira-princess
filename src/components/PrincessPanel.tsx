@@ -1,4 +1,4 @@
-import type { AppState } from "../types";
+import type { ChildProfile } from "../types";
 import {
   getCurrentPrincessGrowth,
   getHanamaruToNextPrincessLevel,
@@ -7,15 +7,15 @@ import {
 import { ProgressBar } from "./ProgressBar";
 
 type PrincessPanelProps = {
-  state: AppState;
+  child: ChildProfile;
   variant?: "compact" | "large";
 };
 
-export function PrincessPanel({ state, variant = "compact" }: PrincessPanelProps) {
-  const growth = getCurrentPrincessGrowth(state.totalHanamaru);
-  const image = state.princessImages[growth.level];
-  const toNext = getHanamaruToNextPrincessLevel(state.totalHanamaru);
-  const progress = getPrincessLevelProgress(state.totalHanamaru);
+export function PrincessPanel({ child, variant = "compact" }: PrincessPanelProps) {
+  const growth = getCurrentPrincessGrowth(child.totalHanamaru);
+  const image = child.princessImages[growth.level];
+  const toNext = getHanamaruToNextPrincessLevel(child.totalHanamaru);
+  const progress = getPrincessLevelProgress(child.totalHanamaru);
 
   return (
     <section className={`princess-panel princess-panel-${variant}`}>
@@ -25,7 +25,7 @@ export function PrincessPanel({ state, variant = "compact" }: PrincessPanelProps
       <div className="princess-info">
         <p className="small-label">プリンセス Lv.{growth.level}</p>
         <h2>{growth.title}</h2>
-        <p>あつめたはなまる：{state.totalHanamaru}こ</p>
+        <p>あつめたはなまる：{child.totalHanamaru}こ</p>
         <p>{toNext > 0 ? `つぎのプリンセスアップまで あと${toNext}こ！` : "いちばん きらきら！"}</p>
         <ProgressBar value={progress} label="プリンセスアップ" />
       </div>
